@@ -1,24 +1,36 @@
 import wikipedia
 import time
 
-def crawl(start_page, end_page, previous_link = ""):
+def crawl(start_page, end_page, previous_link = "", visited = set()):
+    visited.add(start_page.pageid)
+    
     if start_page.url == end_page.url:
         return True
 
-    if len(start_page.links) <= 0:
-        return False
-
     for link in start_page.links:
-        previous_link = previous_link + " -> " + link
+        previous_link = link if len(previous_link) <= 0 else previous_link + " -> " + link
         print(previous_link)
+
+        next_page = None
         try:
             next_page = wikipedia.page(link)
+        except wikipedia.exceptions.DisambiguationError:
+            #TODO: Get the titles from the exception
+            print(link + " not found")
+            continue
         except wikipedia.exceptions.PageError:
             print(link + " not found")
             continue
         
-        return crawl(next_page, end_page, previous_link)
-        time.sleep(1)
+        if not next_page:
+            return False
+
+        if next_page.pageid in visited:
+            print(link + " already visited")
+            continue
+
+        return crawl(next_page, end_page, previous_link, visited)
+    return False
 
 
 start_location = "New York City"
